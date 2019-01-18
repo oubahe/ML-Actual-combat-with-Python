@@ -1,0 +1,76 @@
+def loadDataset():
+    dataset=[];labels=[]
+    f=open('testSet.txt','r')
+    for line in f.readlines():
+        elem=line.strip().split()
+        dataset.append([1.0,float(elem[0]),float(elem[1])])
+        labels.append(int(elem[2]))
+    return dataset,labels
+dataset,labels=loadDataset()
+
+# 定义sigmoid函数
+import numpy as np
+def sigmoid(x):
+    return 1.0/(1+np.exp(-x))
+
+# 梯度上升求权值向量
+def gradientAscend(dataset,labels):
+    dataMat=np.mat(dataset)
+    labelsMat=np.mat(labels).transpose()
+    [m,n]=dataMat.shape
+    weights=np.ones((n,1))
+    alpha=0.001
+    maxIters=500
+    for k in range(maxIters):
+        h=sigmoid(dataMat*weights)
+        error=labelsMat-h
+        weights=weights+alpha*dataMat.transpose()*error
+    return  weights
+weights=gradientAscend(dataset,labels)
+
+# 随机梯度上升
+def StocGradient(dataset,labels,maxIters=10):
+    dataMat=np.mat(dataset)
+    labelsMat=np.mat(labels).transpose()
+    [m,n]=dataMat.shape
+    alpha=0.01
+    weights=np.ones((n,1))
+    for iter in range(maxIters):
+        for i in range(len(labelsMat)):
+            h=sigmoid(sum(dataMat[i]*weights))
+            error=labelsMat[i]-h
+            weights=weights+alpha*dataMat[i].transpose()*error
+    return weights
+stoc_weights_bad=StocGradient(dataset,labels,maxIters=10)
+stoc_weights_good=StocGradient(dataset,labels,maxIters=200)
+
+# 绘制决策边界
+import matplotlib.pyplot as plt
+# def plot_edge(weights,dataset,labels):
+dataMat=dataset
+labelsMat=labels
+length=len(labelsMat)
+x1=[];y1=[];x2=[];y2=[]
+for index in range(length):
+    if labelsMat[index]==0:
+        x1.append(dataMat[index][1])
+        y1.append(dataMat[index][2])
+    else:
+        x2.append(dataMat[index][1])
+        y2.append(dataMat[index][2])
+x1_low=min([elem[1] for elem in dataMat])
+x1_up=max([elem[1] for elem in dataMat])
+xrange=np.arange(x1_low,x1_up,0.1)
+print(xrange.shape)
+fig=plt.figure(figsize=(12,12))
+plt.scatter(x1,y1,c='blue',marker='^')
+plt.scatter(x2,y2,c='red',marker='s')
+y1=((-weights[0]*1-weights[1]*xrange)/weights[2]).transpose()
+y2=((-stoc_weights_bad[0]*1-stoc_weights_bad[1]*xrange)/stoc_weights_bad[2]).transpose()
+y3=((-stoc_weights_good[0]*1-stoc_weights_good[1]*xrange)/stoc_weights_good[2]).transpose()
+plt.plot(xrange,y1,'-g')
+plt.plot(xrange,y2,'-b')
+plt.plot(xrange,y3,'-c')
+plt.legend(['bitch_gradient LR','Stoc_gradient LR with small iterations','Stoc_gradient LR with better iterations'])
+plt.xlabel('x1');plt.ylabel('x2')
+plt.show()
